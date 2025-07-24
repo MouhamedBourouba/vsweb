@@ -1,0 +1,11 @@
+FROM alpine
+
+WORKDIR /app
+
+RUN apk update
+
+RUN apk add go clang wasi-libc
+
+COPY build/ app/
+
+CMD [ "./compiler" ]

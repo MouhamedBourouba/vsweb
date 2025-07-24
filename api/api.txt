@@ -1,0 +1,11 @@
+LanuagesEnum = {
+  // for now
+  c
+  cpp
+}
+
+Post /api/compile (
+  {
+    "language": LanguagesEnum
+  }
+)

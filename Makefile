@@ -1,10 +1,11 @@
-run:
-	@go run cmd/api/main.go
-
-build:
-	@go build -o build/api cmd/api/main.go
+compiler:
+	@go build -o build/compiler cmd/compiler/main.go
 
 air:
-	@air --build.cmd "make build" --build.bin "build/api"
+	@air --build.cmd "make build" --build.bin "build/compiler"
 
-.PHONY: build run
+docker:
+	docker build -f ./deploy/dockerfile .
+
+
+.PHONY: build run docker
