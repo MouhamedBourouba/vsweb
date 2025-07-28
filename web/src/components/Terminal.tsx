@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
-import { useAppState } from "@/store"
 import { Terminal as XTerminal } from '@xterm/xterm'
+import { useTerminalStore } from "@/stores/terminalStore"
 
 function Terminal({ className = "" }: { className?: string }) {
-  const setTerminal = useAppState((state) => state.setTerminal)
+  const terminalStore = useTerminalStore()
   const terminalRef = useRef<HTMLDivElement | null>(null)
   const xterm = useRef<XTerminal | null>(null)
 
@@ -19,16 +19,11 @@ function Terminal({ className = "" }: { className?: string }) {
       })
       xterm.current.open(terminalRef.current)
 
-      setTerminal(xterm.current)
+      terminalStore.initTerminalSession(xterm.current)
 
       xterm.current.write("Terminal ready!\r\n$ ")
 
       return () => {
-        if (xterm.current) {
-          xterm.current.dispose()
-          xterm.current = null
-        }
-        setTerminal(null)
       }
     }
   }, [])

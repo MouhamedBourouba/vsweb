@@ -1,40 +1,45 @@
 package main
 
 import (
-	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/mouhamedBourouba/vsweb/cmd/api/api"
+	"github.com/gorilla/websocket"
 )
 
-type Server struct {
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func NewServer() Server {
-	return Server{}
-}
+func shell(w http.ResponseWriter, r *http.Request) {
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error: ", err.Error())
+		return
+	}
+	defer c.Close()
 
-func (Server) PostApiCompile(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]any{"success": false, "message": "Method Not Allowed"})
-	w.WriteHeader(http.StatusBadRequest)
-}
-
-func (Server) GetApiLanguages(w http.ResponseWriter, r *http.Request) {
+	for {
+		mt, message, err := c.ReadMessage()
+		if err != nil {
+			log.Println("Error reading message: ", err)
+			return
+		}
+		if err := c.WriteMessage(mt, message); err != nil {
+			log.Println("Error writing message: ", err)
+			return
+		}
+	}
 }
 
 func main() {
-	addr := ":8000"
-	server := NewServer()
-	mux := chi.NewMux()
-	handler := api.HandlerFromMux(server, mux)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "hello buddy ur")
+	})
 
-	httpServer := http.Server{
-		Handler: handler,
-		Addr:    addr,
-	}
+	http.HandleFunc("/shell", shell)
 
-	log.Println("Http Server started at", addr)
-	log.Fatal(httpServer.ListenAndServe())
+	log.Println("Listening on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

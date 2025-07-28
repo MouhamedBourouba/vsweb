@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
 import * as monaco from 'monaco-editor'
-import { useAppState } from "@/store"
+import { useEditorStore } from "@/stores/editorStore"
 
 function Editor({ className = "", theme = "vs-dark" }: { className?: string, theme?: string }) {
-  const setEditor = useAppState((appState) => (appState.setEditor))
+  const setEditor = useEditorStore((appState) => (appState.setEditor))
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
