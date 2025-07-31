@@ -11,8 +11,32 @@ interface TerminalState {
   dispose(): void;
 }
 
-var socket: WebSocket;
-var isInit = false;
+function debouncedCallback<T extends (...args: any[]) => void>(
+  callback: T,
+  timeout: number,
+) {
+  let timeoutHandler: ReturnType<typeof setTimeout> | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeoutHandler !== null) {
+      clearTimeout(timeoutHandler);
+    }
+
+    timeoutHandler = setTimeout(() => {
+      callback(...args);
+    }, timeout);
+  };
+}
+
+let socket: WebSocket;
+let isInit = false;
+let debouncedSendMessage = debouncedCallback(
+  (socket: WebSocket, message: string) => {
+    console.log("sent");
+    socket.send(message);
+  },
+  500,
+);
 
 const useTerminalStore = create<TerminalState>()((set, get) => ({
   terminal: null,
@@ -57,17 +81,15 @@ const useTerminalStore = create<TerminalState>()((set, get) => ({
       return;
     }
 
-    get().fitAddon?.fit();
+    const { terminal, fitAddon } = get();
+
+    fitAddon?.fit();
 
     // sync with the server
-    // Todo: add debounced value to not overwhelm the server
-    let resizeMessage = [
-      "/resize",
-      get().terminal!.rows.toString(),
-      get().terminal!.cols.toString(),
-    ].join(" ");
+    const resizeMessage = `/resize ${terminal!.rows.toString()} ${terminal!.cols.toString()}`;
 
-    socket.send(resizeMessage);
+    debouncedSendMessage(socket, resizeMessage);
   },
 }));
+
 export { useTerminalStore };
