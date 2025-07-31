@@ -10,7 +10,6 @@ interface EditorState {
 const useEditorStore = create<EditorState>()((set) => {
   return {
     editor: null,
-    // terminal: null,
 
     setEditor(editor) {
       set({ editor: editor });

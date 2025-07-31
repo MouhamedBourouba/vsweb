@@ -113,7 +113,7 @@ func Compile(language Language, filePath string, outputFile string) error {
 }
 
 func main() {
-	err := Compile("main.c", "output.wasm")
+	err := Compile("main.c", "input", "output.wasm")
 	if err != nil {
 		println(err.Error())
 		return

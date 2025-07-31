@@ -6,11 +6,14 @@ web/yarn-debug.log*
 web/yarn-error.log*
 web/pnpm-debug.log*
 web/lerna-debug.log*
-web/node_modules
+web/node_modules/
 web/dist
 web/dist-ssr
 web/*.local
 web/pnpm-lock.yaml
+build/
+main
+tmp
 
 # Editor directories and files
 .vscode/*
