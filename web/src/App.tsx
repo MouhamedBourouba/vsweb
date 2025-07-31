@@ -11,7 +11,7 @@ function App() {
           <Editor className='size-full' />
         </ResizablePanel>
 
-        <ResizableHandle />
+        <ResizableHandle withHandle />
 
         <ResizablePanel>
           <Terminal className='size-full bg-amber-950' />

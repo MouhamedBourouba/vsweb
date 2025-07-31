@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/creack/pty"
 	"github.com/gorilla/websocket"
@@ -23,21 +25,21 @@ func shell(w http.ResponseWriter, r *http.Request) {
 
 	cmd := exec.Command("./third-party/busybox", "ash")
 
-	ptty, err := pty.Start(cmd)
+	terminalFile, err := pty.Start(cmd)
 	if err != nil {
 		log.Println("pty error: ", err.Error())
 		return
 	}
 
 	defer func() {
-		_ = ptty.Close()
+		_ = terminalFile.Close()
 		_ = c.Close()
 	}()
 
 	go func() {
 		buf := make([]byte, 1024)
 		for {
-			n, err := ptty.Read(buf)
+			n, err := terminalFile.Read(buf)
 			if err != nil {
 				return
 			}
@@ -50,8 +52,40 @@ func shell(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		ptty.Write(message)
 
+		// log.Println("Payload: ", string(message))
+		if strings.HasPrefix(string(message), "/resize") {
+			// Todo: extract a function to parse the /resize command
+			commandParts := strings.Split(string(message), " ")
+			if len(commandParts) != 3 {
+				// Todo: handle error
+				log.Println("Malformated request")
+				continue
+			}
+
+			rows, err := strconv.Atoi(commandParts[1])
+			if err != nil {
+				// Todo: handle error
+				log.Println("Malformated request")
+				continue
+			}
+
+			cols, err := strconv.Atoi(commandParts[2])
+			if err != nil {
+				// Todo: handle error
+				log.Println("Malformated request")
+				continue
+			}
+
+			pty.Setsize(terminalFile, &pty.Winsize{
+				Rows: uint16(rows),
+				Cols: uint16(cols),
+			})
+
+			continue
+		}
+
+		terminalFile.Write(message)
 	}
 
 	// for {

@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Terminal as XTerminal } from '@xterm/xterm'
 import { useTerminalStore } from "@/stores/terminalStore"
 import { FitAddon } from "@xterm/addon-fit"
 
+const bgColor = "#1e1e1e"
+
 function Terminal({ className = "" }: { className?: string }) {
   const terminalStore = useTerminalStore()
   const terminalRef = useRef<HTMLDivElement>(null)
-  const bgColor = useMemo(() => "#1e1e1e", [])
 
   useEffect(() => {
-    let xterm = new XTerminal({
+    const xterm = new XTerminal({
       theme: {
         background: bgColor,
         foreground: '#ffffff'
@@ -18,14 +19,14 @@ function Terminal({ className = "" }: { className?: string }) {
       fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
     })
 
-    let fitAddon = new FitAddon()
+    const fitAddon = new FitAddon()
     xterm.loadAddon(fitAddon)
 
     xterm.open(terminalRef.current!)
 
     terminalStore.initTerminalSession(xterm, fitAddon)
 
-    let observer = new ResizeObserver((_) => terminalStore.onResize())
+    const observer = new ResizeObserver((_) => terminalStore.onResize())
     observer.observe(terminalRef.current!)
 
     return () => {
@@ -34,7 +35,7 @@ function Terminal({ className = "" }: { className?: string }) {
     }
   }, [])
 
-  return <div className={className} style={{ background: "red" }} ref={terminalRef}></div>
+  return <div className={className} style={{ background: bgColor }} ref={terminalRef}></div>
 }
 
 export default Terminal

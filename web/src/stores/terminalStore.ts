@@ -11,32 +11,40 @@ interface TerminalState {
   dispose(): void;
 }
 
+var socket: WebSocket;
+var isInit = false;
+
 const useTerminalStore = create<TerminalState>()((set, get) => ({
   terminal: null,
   fitAddon: null,
 
   initTerminalSession: async (terminal, fitAddon) => {
     set({ terminal: terminal, fitAddon: fitAddon });
+    try {
+      socket = new WebSocket("ws://localhost:8080/shell");
+      socket.onerror = (message) => {
+        console.log(message);
+      };
 
-    let socket = new WebSocket("ws://localhost:8080/shell");
+      socket.onmessage = (message) => {
+        terminal?.write(message.data);
+      };
 
-    socket.onerror = (message) => {
-      console.log(message);
-    };
-
-    socket.onmessage = (message) => {
-      terminal?.write(message.data);
-    };
-
-    socket.onopen = (_) => {
-      terminal?.onData((data) => {
-        socket.send(data);
-      });
-    };
+      socket.onopen = (_) => {
+        terminal?.onData((data) => {
+          socket.send(data);
+        });
+      };
+      isInit = true;
+    } catch (error) {
+      // Todo: handle errors
+      console.log("error Connecting to ws");
+    }
   },
 
   dispose: function (): void {
-    if (get().terminal != null) {
+    if (isInit) {
+      isInit = false;
       get().fitAddon?.dispose();
       get().terminal?.dispose();
       get().terminal = null;
@@ -45,8 +53,21 @@ const useTerminalStore = create<TerminalState>()((set, get) => ({
   },
 
   onResize: function (): void {
+    if (!isInit) {
+      return;
+    }
+
     get().fitAddon?.fit();
+
+    // sync with the server
+    // Todo: add debounced value to not overwhelm the server
+    let resizeMessage = [
+      "/resize",
+      get().terminal!.rows.toString(),
+      get().terminal!.cols.toString(),
+    ].join(" ");
+
+    socket.send(resizeMessage);
   },
 }));
-
 export { useTerminalStore };
