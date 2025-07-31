@@ -28,15 +28,16 @@ function debouncedCallback<T extends (...args: any[]) => void>(
   };
 }
 
-let socket: WebSocket;
-let isInit = false;
-let debouncedSendMessage = debouncedCallback(
-  (socket: WebSocket, message: string) => {
-    console.log("sent");
-    socket.send(message);
+let debouncedTerminalSizeSync = debouncedCallback(
+  (terminal: XTerminal, socket: WebSocket) => {
+    const resizeMessage = `/resize ${terminal!.rows.toString()} ${terminal!.cols.toString()}`;
+    socket.send(resizeMessage);
   },
   500,
 );
+
+let socket: WebSocket;
+let isInit = false;
 
 const useTerminalStore = create<TerminalState>()((set, get) => ({
   terminal: null,
@@ -80,15 +81,10 @@ const useTerminalStore = create<TerminalState>()((set, get) => ({
     if (!isInit) {
       return;
     }
-
     const { terminal, fitAddon } = get();
 
     fitAddon?.fit();
-
-    // sync with the server
-    const resizeMessage = `/resize ${terminal!.rows.toString()} ${terminal!.cols.toString()}`;
-
-    debouncedSendMessage(socket, resizeMessage);
+    debouncedTerminalSizeSync(terminal!, socket);
   },
 }));
 
