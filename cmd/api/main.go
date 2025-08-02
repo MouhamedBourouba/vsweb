@@ -102,27 +102,6 @@ func shell(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 
-type WebsocketTerminal struct {
-	conn *websocket.Conn
-}
-
-func (this WebsocketTerminal) Read(p []byte) (n int, err error) {
-	_, messageReader, err := this.conn.NextReader()
-	if err != nil {
-		return 0, err
-	}
-	return messageReader.Read(p)
-}
-
-func (this WebsocketTerminal) Write(p []byte) (n int, err error) {
-	println("Writen: ", "`", string(p), "`")
-	return len(p), nil
-}
-
-func New(conn *websocket.Conn) WebsocketTerminal {
-	return WebsocketTerminal{conn: conn}
-}
-
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "hello buddy ////")

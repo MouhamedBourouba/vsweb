@@ -2,6 +2,10 @@ import { Terminal as XTerminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { create } from "zustand";
 
+let socket: WebSocket;
+let isInit = false;
+let registeredSocketCallBack = false;
+
 interface TerminalState {
   terminal: XTerminal | null;
   fitAddon: FitAddon | null;
@@ -36,17 +40,21 @@ let debouncedTerminalSizeSync = debouncedCallback(
   500,
 );
 
-let socket: WebSocket;
-let isInit = false;
+function connectToWs(terminal: XTerminal) {
+  terminal?.onData((data) => {
+    if (socket.readyState == WebSocket.OPEN) {
+      socket.send(data);
+    }
+  });
 
-const useTerminalStore = create<TerminalState>()((set, get) => ({
-  terminal: null,
-  fitAddon: null,
-
-  initTerminalSession: async (terminal, fitAddon) => {
-    set({ terminal: terminal, fitAddon: fitAddon });
+  let retry = () => {
     try {
       socket = new WebSocket("ws://localhost:8080/shell");
+
+      socket.onopen = (_) => {
+        console.log("WS connected");
+      };
+
       socket.onerror = (message) => {
         console.log(message);
       };
@@ -55,25 +63,44 @@ const useTerminalStore = create<TerminalState>()((set, get) => ({
         terminal?.write(message.data);
       };
 
-      socket.onopen = (_) => {
-        terminal?.onData((data) => {
-          socket.send(data);
-        });
+      socket.onclose = (_) => {
+        if (isInit) {
+          setTimeout(() => {
+            if (socket.readyState == WebSocket.CLOSED) {
+              retry();
+            }
+          }, 1000);
+        }
       };
-      isInit = true;
     } catch (error) {
       // Todo: handle errors
-      console.log("error Connecting to ws");
+      // Todo: Add loading state
+      console.log(error);
     }
+  };
+  retry();
+}
+
+const useTerminalStore = create<TerminalState>()((set, get) => ({
+  terminal: null,
+  fitAddon: null,
+
+  initTerminalSession: async (terminal, fitAddon) => {
+    isInit = true;
+    set({ terminal: terminal, fitAddon: fitAddon });
+    connectToWs(terminal);
   },
 
   dispose: function (): void {
     if (isInit) {
-      isInit = false;
       get().fitAddon?.dispose();
       get().terminal?.dispose();
+
       get().terminal = null;
       get().fitAddon = null;
+
+      isInit = false;
+      registeredSocketCallBack = false;
     }
   },
 
