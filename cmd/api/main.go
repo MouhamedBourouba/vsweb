@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -12,30 +13,27 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Todo: make shit secure
+// type DockerClient struct {
+// }
+//
+// func createTerminalInContainer() (*os.File, error) {
+// 	dc, err := client.NewClientWithOpts(client.FromEnv)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	defer dc.Close()
+//
+// 	return nil, nil
+// }
+
+// Todo: no
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func shell(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Upgrade error: ", err.Error())
-		return
-	}
-
-	cmd := exec.Command("./third-party/busybox", "ash")
-
-	terminalFile, err := pty.Start(cmd)
-	if err != nil {
-		log.Println("pty error: ", err.Error())
-		return
-	}
-
-	defer func() {
-		_ = terminalFile.Close()
-		_ = c.Close()
-	}()
-
+func handleConnection(terminalFile *os.File, c *websocket.Conn) {
 	go func() {
 		buf := make([]byte, 1024)
 		for {
@@ -87,19 +85,32 @@ func shell(w http.ResponseWriter, r *http.Request) {
 
 		terminalFile.Write(message)
 	}
+}
 
-	// for {
-	// 	mt, message, err := c.ReadMessage()
-	// 	if err != nil {
-	// 		log.Println("Error reading message: ", err)
-	// 		return
-	// 	}
-	//
-	// 	if err := c.WriteMessage(mt, message); err != nil {
-	// 		log.Println("Error writing message: ", err)
-	// 		return
-	// 	}
-	// }
+func shellHandler(w http.ResponseWriter, r *http.Request) {
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error: ", err.Error())
+		return
+	}
+
+	cmd := exec.Command("./third-party/busybox", "ash")
+	terminalFile, err := pty.Start(cmd)
+	if err != nil {
+		log.Println("pty error: ", err.Error())
+		return
+	}
+
+	defer func() {
+		_ = terminalFile.Close()
+		_ = c.Close()
+	}()
+
+	handleConnection(terminalFile, c)
+}
+
+func filesystemHandler(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "hello im fs server bruhhhhh")
 }
 
 func main() {
@@ -107,7 +118,9 @@ func main() {
 		io.WriteString(w, "hello buddy ////")
 	})
 
-	http.HandleFunc("/shell", shell)
+	http.HandleFunc("/shell", shellHandler)
+
+	http.HandleFunc("/filesystem/", filesystemHandler)
 
 	log.Println("Listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

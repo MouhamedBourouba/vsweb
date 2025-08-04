@@ -8,7 +8,9 @@ function App() {
       <ResizablePanelGroup direction='vertical'>
 
         <ResizablePanel defaultSize={80} minSize={20}>
-          <Editor className='size-full' />
+          <div className='relative size-full'>
+            <Editor className='size-full' />
+          </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />

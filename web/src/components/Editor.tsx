@@ -17,8 +17,11 @@ function Editor({ className = "", theme = "vs-dark" }: { className?: string, the
       renderWhitespace: 'all',
       renderLineHighlight: 'all',
       minimap: {
-        scale: 10
+        enabled: false
       },
+      // minimap: {
+      //   scale: 10
+      // },
       tabSize: 2,
       insertSpaces: true,
       formatOnType: true,
