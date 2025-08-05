@@ -17,7 +17,6 @@ self-hostable solution for educational institutions to manage software developme
 - **Main Components:**
   - **Frontend (Web UI)**: Browser-based IDE built with React, Monaco Editor, and xterm.js.  
   - **Backend API**: Go-based server for handling requests.  
-  - **S3 Storage**: Provides a standard API for the web application to manipulate the file system.  
   - **Execution Service**: Docker-based sandbox for running user code securely.  
 ---
 
@@ -27,6 +26,6 @@ self-hostable solution for educational institutions to manage software developme
 - **FR3**: Execute code securely inside sandboxed env.  
 - **FR4**: Allow administrators/instructors to preconfigure docker images with dependencies and tools.  
 - **FR5**: Provide an interactive terminal connected to the execution environment.  
-- **FR6**: Store user files and projects persistently using S3.
+- **FR6**: Store user files and projects persistently.
 - **FR7**: Display real-time output of code execution.
 ---
