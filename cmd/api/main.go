@@ -11,6 +11,7 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/gorilla/websocket"
+	"github.com/mouhamedBourouba/go-file-service/fileserver"
 )
 
 // Todo: make shit secure
@@ -109,10 +110,6 @@ func shellHandler(w http.ResponseWriter, r *http.Request) {
 	handleConnection(terminalFile, c)
 }
 
-func filesystemHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "hello im fs server bruhhhhh")
-}
-
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "hello buddy ////")
@@ -120,7 +117,10 @@ func main() {
 
 	http.HandleFunc("/shell", shellHandler)
 
-	http.HandleFunc("/filesystem/", filesystemHandler)
+	fs := fileserver.New(
+		fileserver.WithDataDir("./data"),
+		fileserver.WithLogger(log.Default()))
+	http.Handle("/fs/", http.StripPrefix("/fs/", fs))
 
 	log.Println("Listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
